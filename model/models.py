@@ -23,6 +23,12 @@ class Node(object):
         self.I_e = []                               # A list of interfering nodes considering priority
         self.f_t = -1
 
+                # Added by JH
+        self.est = -1
+        self.ltc = -1
+        self.i = -1
+        self.f = -1
+
         self.actual_delay = 0                       # v_j's actual delay from interference group considering priority
 
     def __str__(self):
@@ -39,6 +45,8 @@ class DAG(object):
     def __init__(self, **kwargs):
         Node.idx = 0
         self.node_set = []
+        self.node_est = []
+        self.checkpoint=[]
         self.start_node_idx = kwargs.get('start_node_idx', 0)
         self.critical_path = []
         self.sl_node_idx = kwargs.get('sl_node_idx', 0)

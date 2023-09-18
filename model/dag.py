@@ -27,6 +27,38 @@ def argmax(value_list, index_list=None):
             max_value = value_list[i]
     return max_index
 
+def calc_est(dag, task_idx):
+    if dag.node_set[task_idx].est == -1 :
+        if len(dag.node_set[task_idx].pred)==0 :
+            dag.node_set[task_idx].est=0
+            dag.node_set[task_idx].i=0
+        else :
+            est=0
+            for i in dag.node_set[task_idx].pred:
+                if dag.node_set[i].est == -1:
+                    dag=calc_est(dag, dag.node_set[i].tid)
+                if dag.node_set[i].est+dag.node_set[i].exec_t>est:
+                    est=dag.node_set[i].est+dag.node_set[i].exec_t
+            dag.node_set[task_idx].est=est
+            dag.node_set[task_idx].i=est
+    return dag
+
+def calc_ltc(dag, task_idx):
+    if dag.node_set[task_idx].ltc == -1 :
+        if len(dag.node_set[task_idx].succ)==0 :
+            dag.node_set[task_idx].ltc=dag.checkpoint[-1]
+            dag.node_set[task_idx].f=dag.checkpoint[-1]
+        else :
+            ltc=dag.checkpoint[-1]
+            for i in dag.node_set[task_idx].succ:
+                if dag.node_set[i].ltc == -1:
+                    dag=calc_ltc(dag, dag.node_set[i].tid)
+                if dag.node_set[i].ltc-dag.node_set[i].exec_t<ltc:
+                    ltc=dag.node_set[i].ltc-dag.node_set[i].exec_t
+            dag.node_set[task_idx].ltc=ltc
+            dag.node_set[task_idx].f=ltc
+    return dag
+
 def calculate_critical_path(dag):
     ready_queue = []
     is_complete = [False, ] * len(dag.node_set)
@@ -203,27 +235,6 @@ def generate_random_dag(**kwargs):
                 dag.node_set[node_idx].succ.append(succ_idx)
                 dag.node_set[succ_idx].pred.append(node_idx)
 
-    # make extra arc (disabled since unnecessary)
-    '''
-    for i in range(extra_arc_num):
-        arc_added_flag = False
-        failCnt = 0
-        while not arc_added_flag and failCnt < 10:
-            node1_idx = randint(0, node_num-2)
-            node2_idx = randint(0, node_num-2)
-
-            if dag.node_set[node1_idx].level < dag.node_set[node2_idx].level and node2_idx not in dag.node_set[node1_idx].succ:
-                dag.node_set[node1_idx].succ.append(node2_idx)
-                dag.node_set[node2_idx].pred.append(node1_idx)
-                arc_added_flag = True
-            elif dag.node_set[node1_idx].level > dag.node_set[node2_idx].level and node1_idx not in dag.node_set[node2_idx].succ:
-                dag.node_set[node2_idx].succ.append(node1_idx)
-                dag.node_set[node1_idx].pred.append(node2_idx)
-                arc_added_flag = True
-            else:
-                failCnt += 1
-    '''
-
     ### 5. Make critical path's length longest
     exec_t_arr = [randuniform(_exec_t) for _ in range(node_num)]
     exec_t_arr.sort()
@@ -259,6 +270,36 @@ def generate_random_dag(**kwargs):
     
     dag.dict["adj_matrix"] = adj_matrix
 
+    # Added by JH
+    for i in range(node_num):
+        dag=calc_est(dag, i)
+    max_est=0
+    max_est_i=0
+    for i in range(node_num):
+        dag.node_est.append(dag.node_set[i].est)
+        if dag.node_est[i]+dag.node_set[i].exec_t>max_est:
+            max_est=dag.node_est[i]+dag.node_set[i].exec_t
+            max_est_i=i
+
+    dag.critical_path=[]
+    dag.checkpoint.append(max_est)
+    max_est-=dag.node_set[max_est_i].exec_t
+    while (max_est!=0) :
+        dag.critical_path.append(max_est_i)
+        for j in dag.node_set[max_est_i].pred:
+            if dag.node_est[j]+dag.node_set[j].exec_t==max_est:
+                max_est_i=j
+                dag.checkpoint.append(max_est)
+                max_est-=dag.node_set[j].exec_t
+                break
+    dag.checkpoint.append(0)
+    dag.critical_path.append(max_est_i)
+    dag.checkpoint.reverse()
+    dag.critical_path.reverse()
+
+    for i in range(node_num):
+        dag=calc_ltc(dag, i)
+    
     return dag
 
 def generate_from_dict(dict):
