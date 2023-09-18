@@ -10,6 +10,35 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import random
 
+def show_def(dag, title):
+    fig, ax = plt.subplots()
+    for i in range(len(dag.checkpoint)-1):
+        ax.add_patch(Rectangle((dag.checkpoint[i], 0), dag.checkpoint[i+1]-dag.checkpoint[i], 15, fill=False, color='black'))
+        ax.text((dag.checkpoint[i]+dag.checkpoint[i+1]) / 2, 7, dag.node_set[dag.critical_path[i]].name, ha='center', va='center', color='black')
+    for i in range(len(dag.node_set)):
+        if i in dag.critical_path: continue
+        ax.add_patch(Rectangle((dag.node_set[i].est, 20+(i-len(dag.critical_path))*15), dag.node_set[i].ltc-dag.node_set[i].est, 15, fill=False, color='black'))
+        ax.add_patch(Rectangle((dag.node_set[i].est, 20+(i-len(dag.critical_path))*15), dag.node_set[i].exec_t, 15, color=dag.node_set[i].color))
+        ax.text(dag.node_set[i].est+20, 27+(i-len(dag.critical_path))*15, dag.node_set[i].name, ha='center', va='center', color='black')
+    plt.axis('equal') 
+    plt.savefig('res/'+title, dpi=300)
+    plt.close()
+
+def show_stretch(dag, title):
+    fig, ax = plt.subplots()
+    for i in range(len(dag.checkpoint)-1):
+        ax.add_patch(Rectangle((dag.checkpoint[i], 0), dag.checkpoint[i+1]-dag.checkpoint[i], 15, fill=False, color='black'))
+        ax.text((dag.checkpoint[i]+dag.checkpoint[i+1]) / 2, 7, dag.node_set[dag.critical_path[i]].name, ha='center', va='center', color='black')
+    for i in range(len(dag.node_set)):
+        if i in dag.critical_path: continue
+        ax.add_patch(Rectangle((dag.node_set[i].est, 20+(i-len(dag.critical_path))*15), dag.node_set[i].ltc-dag.node_set[i].est, 15, fill=False, color='black'))
+        ax.add_patch(Rectangle((dag.node_set[i].i, 20+(i-len(dag.critical_path))*15), dag.node_set[i].f-dag.node_set[i].i, 15*dag.node_set[i].exec_t/(dag.node_set[i].f-dag.node_set[i].i), color=dag.node_set[i].color))
+        ax.text(dag.node_set[i].est+20, 27+(i-len(dag.critical_path))*15, dag.node_set[i].name, ha='center', va='center', color='black')
+    plt.axis('equal') 
+    plt.savefig('res/'+title, dpi=300)
+    plt.close()
+
+
 def check_depen(dag):
     for i in range(len(dag.node_set)):
         for j in dag.node_set[i].pred:
@@ -78,7 +107,9 @@ def syn_exp(**kwargs):
         normal_cpc = construct_cpc(normal_dag)
 
         ### Budget analysis
-        deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
+        # deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
+        deadline=750
+        print(deadline)
         normal_dag.dict["deadline"] = deadline
 
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
@@ -93,8 +124,12 @@ def syn_exp(**kwargs):
 
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t=deadline-normal_dag.checkpoint[-1]+normal_dag.node_set[normal_dag.sl_node_idx].ltc-normal_dag.node_set[normal_dag.sl_node_idx].est
         total_jh_budget+=normal_dag.node_set[normal_dag.sl_node_idx].exec_t
-        
+        show_def(normal_dag, '%f 1.png'%density)
+        show_stretch(normal_dag, '%f 2.png'%density)
         normal_dag=check_depen(normal_dag)
+        show_stretch(normal_dag, '%f 3.png' %density)
         total_jh_core+=check_maxcore(normal_dag, deadline)
         dag_idx += 1
+
+
     return total_jw_budget/dag_num, total_jh_budget/dag_num, total_jh_core/dag_num

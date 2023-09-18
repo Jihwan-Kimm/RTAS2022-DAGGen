@@ -1,3 +1,6 @@
+import random
+
+
 class Node(object):
     idx = 0
     def __init__(self, **kwargs):
@@ -28,6 +31,7 @@ class Node(object):
         self.ltc = -1
         self.i = -1
         self.f = -1
+        self.color=(random.random()/2.5+0.2, random.random()/2.5+0.2, random.random()/2.5+0.2)
 
         self.actual_delay = 0                       # v_j's actual delay from interference group considering priority
 

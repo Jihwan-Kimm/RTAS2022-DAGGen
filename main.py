@@ -16,8 +16,6 @@ if __name__ == '__main__':
 
     makedirs("res", exist_ok=True)
 
-    # with open('cfg/' + args.config, 'r') as f:
-    #     config_dict = yaml.load(f, Loader=yaml.FullLoader)
     with open('cfg/jihwan.yaml', 'r') as f:
         config_dict = yaml.load(f, Loader=yaml.FullLoader)
     exp_param = {
@@ -34,23 +32,6 @@ if __name__ == '__main__':
         "base" : config_dict["baseline"],
         "dangling" : config_dict["dangling_ratio"]
     }
-
-    # if config_dict["exp"] == 'density':
-    #     for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
-    #         d_f = round(d / 100, 2)
-    #         print('Density %f start' % d_f)
-    #         exp_param["density"] = d_f
-    #         exp_param["sl_std"] = config_dict["sl_std"]
-    #         un, dm, both = syn_exp(**exp_param)
-
-    #         file_name = 'res/density_' + str(d) + '.csv'
-    #         with open(file_name, 'w', newline='') as f:
-    #             wr = csv.writer(f)
-    #             wr.writerow(['Failure Type', 'Base Small', 'Base Large', 'Ours Classic', 'Ours CPC'])
-    #             wr.writerow(['Unacceptable Result'] + un)
-    #             wr.writerow(['Deadline Miss'] + dm)
-    #             wr.writerow(['Both'] + both)
-    # elif config_dict["exp"] == 'jihwan':
     with open('res/jihwan.csv', 'w', newline='') as f:
         wr = csv.writer(f)
         wr.writerow(['density','jw_budget', 'jh_budget', 'jw_core', 'jh_core'])
@@ -61,33 +42,6 @@ if __name__ == '__main__':
             exp_param["sl_std"] = config_dict["sl_std"]
             jw, jh, core = syn_exp(**exp_param)
             wr.writerow([d_f, jw, jh, exp_param["core_num"], core])
-    # elif config_dict["exp"] == 'std':
-    #     for s in range(config_dict["std_range"][0], config_dict["std_range"][1], config_dict["std_range"][2]):
-    #         s_f = round(s / 10, 1)
-    #         print('Density %f start' % s_f)
-            
-    #         exp_param["density"] = config_dict["density"]
-    #         exp_param["sl_std"] = s_f
-    #         un, dm, both = syn_exp(**exp_param)
-
-    #         file_name = 'res/std_' + str(s) + '.csv'
-    #         with open(file_name, 'w', newline='') as f:
-    #             wr = csv.writer(f)
-    #             wr.writerow(un)
-    #             wr.writerow(dm)
-    #             wr.writerow(both)
-    # elif config_dict["exp"] == 'acc':
-    #     exp_param["density"] = config_dict["density"]
-    #     exp_param["sl_std"] = config_dict["sl_std"]
-    #     acc_exp(**exp_param)
-    # elif config_dict["exp"] == "debug":
-    #     if not exists(config_dict["dag_file"]):
-    #         print('Should select appropriate dag file')
-    #         exit(1)
-    #     debug(config_dict["dag_file"], **exp_param)
-    # else:
-    #     print('Select appropriate exp (density, std, acc, debug)')
-    #     exit(1)
 
     end_ts = datetime.now()
     print('[System] Execution time : %s' % str(end_ts - start_ts))
