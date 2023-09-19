@@ -1,11 +1,11 @@
 exp: jihwan
-density_range: [20,41,2]
+density_range: [20,21,2]
 
-dag_num: 500
+dag_num: 1
 instance_num: 100
 
-core_num: 4
-node_num: [15,2]
+core_num: 50
+node_num: [15,0]
 depth: [8,1.5]
 exec_t: [40,10]
 
