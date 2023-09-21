@@ -112,6 +112,10 @@ def calculate_critical_path(dag):
     longest_idx = argmax(max_len)
     return longest[longest_idx]
 
+def print_dag(dag):
+    for i in dag.node_set:
+        print(i.pred, ", ", i.succ)
+
 def generate_random_dag(**kwargs):
     node_num = randuniform(kwargs.get('node_num', [20, 3]))
     depth = randuniform(kwargs.get('depth', [3.5, 0.5]))
@@ -223,7 +227,7 @@ def generate_random_dag(**kwargs):
     for level in range(depth-1, 0, -1):
         for node_idx in level_arr[level]:
             if len(dag.node_set[node_idx].pred) == 0 :
-                pred_idx = randarr(level_arr[level-1])
+                pred_idx = randarr(level_arr[randint(0, level-1)])
                 dag.node_set[pred_idx].succ.append(node_idx)
                 dag.node_set[node_idx].pred.append(pred_idx)
 
@@ -231,7 +235,7 @@ def generate_random_dag(**kwargs):
     for level in range(0, depth-1):
         for node_idx in level_arr[level]:
             if len(dag.node_set[node_idx].succ) == 0 :
-                succ_idx = level_arr[level+1][randint(0, len(level_arr[level+1])-1)]
+                succ_idx = level_arr[randint(level+1, depth-1)][randint(0, len(level_arr[level+1])-1)]
                 dag.node_set[node_idx].succ.append(succ_idx)
                 dag.node_set[succ_idx].pred.append(node_idx)
 
