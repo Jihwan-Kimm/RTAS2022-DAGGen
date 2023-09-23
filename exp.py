@@ -1,5 +1,5 @@
 import math
-from model.dag import export_dag_file, generate_random_dag, generate_backup_dag, generate_from_dict, import_dag_file
+from model.dag import export_dag_file, generate_random_dag, generate_backup_dag, generate_from_dict, import_dag_file, cal_est_ltc
 from model.cpc import construct_cpc, assign_priority
 from sched.fp import calculate_acc, check_acceptance, check_deadline_miss, sched_fp
 from sched.classic_budget import classic_budget
@@ -12,9 +12,9 @@ import random
 
 def show_def(dag, title):
     fig, ax = plt.subplots()
-    for i in range(len(dag.checkpoint)-1):
-        ax.add_patch(Rectangle((dag.checkpoint[i], 0), dag.checkpoint[i+1]-dag.checkpoint[i], 15, fill=False, color='black'))
-        ax.text((dag.checkpoint[i]+dag.checkpoint[i+1]) / 2, 7, dag.node_set[dag.critical_path[i]].name, ha='center', va='center', color='black')
+    for i in range(len(dag.critical_path_point)-1):
+        ax.add_patch(Rectangle((dag.critical_path_point[i], 0), dag.critical_path_point[i+1]-dag.critical_path_point[i], 15, fill=False, color='black'))
+        ax.text((dag.critical_path_point[i]+dag.critical_path_point[i+1]) / 2, 7, dag.node_set[dag.critical_path[i]].name, ha='center', va='center', color='black')
     for i in range(len(dag.node_set)):
         if i in dag.critical_path: continue
         ax.add_patch(Rectangle((dag.node_set[i].est, 20+(i-len(dag.critical_path))*15), dag.node_set[i].ltc-dag.node_set[i].est, 15, fill=False, color='black'))
@@ -26,14 +26,18 @@ def show_def(dag, title):
 
 def show_stretch(dag, title):
     fig, ax = plt.subplots()
-    for i in range(len(dag.checkpoint)-1):
-        ax.add_patch(Rectangle((dag.checkpoint[i], 0), dag.checkpoint[i+1]-dag.checkpoint[i], 15, fill=False, color='black'))
-        ax.text((dag.checkpoint[i]+dag.checkpoint[i+1]) / 2, 7, dag.node_set[dag.critical_path[i]].name, ha='center', va='center', color='black')
+    for i in range(1, len(dag.critical_path_point)-2):
+        ax.add_patch(Rectangle((dag.critical_path_point[i], 0), dag.critical_path_point[i+1]-dag.critical_path_point[i], 35, fill=False, color='black'))
+        ax.text((dag.critical_path_point[i]+dag.critical_path_point[i+1]) / 2, 17, dag.node_set[dag.critical_path[i]].name, ha='center', va='center', color='black')
+    space=0
     for i in range(len(dag.node_set)):
-        if i in dag.critical_path: continue
-        ax.add_patch(Rectangle((dag.node_set[i].est, 20+(i-len(dag.critical_path))*15), dag.node_set[i].ltc-dag.node_set[i].est, 15, fill=False, color='black'))
-        ax.add_patch(Rectangle((dag.node_set[i].i, 20+(i-len(dag.critical_path))*15), dag.node_set[i].f-dag.node_set[i].i, 15*dag.node_set[i].exec_t/(dag.node_set[i].f-dag.node_set[i].i), color=dag.node_set[i].color))
-        ax.text(dag.node_set[i].est+20, 27+(i-len(dag.critical_path))*15, dag.node_set[i].name, ha='center', va='center', color='black')
+        if i in dag.critical_path: 
+            space+=1 
+            continue
+        j=i-space
+        ax.add_patch(Rectangle((dag.node_set[i].est,50+45*j), dag.node_set[i].ltc-dag.node_set[i].est, 45, fill=False, color='black'))
+        ax.add_patch(Rectangle((dag.node_set[i].i, 50+45*j), dag.node_set[i].f-dag.node_set[i].i, 45*dag.node_set[i].exec_t/(dag.node_set[i].f-dag.node_set[i].i), color=dag.node_set[i].color))
+        ax.text(dag.node_set[i].est+45, 73+45*j, dag.node_set[i].name, ha='center', va='center', color='black')
     plt.axis('equal') 
     plt.savefig('res/'+title, dpi=300)
     plt.close()
@@ -48,6 +52,7 @@ def check_depen(dag):
                 if border>dag.node_set[j].ltc: border=dag.node_set[j].ltc
                 dag.node_set[i].i=border
                 dag.node_set[j].f=border
+                dag.checkpoint.append(border)
 
         for j in dag.node_set[i].succ:
             if dag.node_set[i].f>dag.node_set[j].i:
@@ -56,17 +61,23 @@ def check_depen(dag):
                 if border<dag.node_set[j].est: border=dag.node_set[j].est                
                 dag.node_set[i].f=border
                 dag.node_set[j].i=border
+                dag.checkpoint.append(border)
     return dag
 
 def check_maxcore(dag, deadline):
     maxcore=-1
-    for i in range(0, deadline, 5):
+    for i in dag.checkpoint:
         core=0
         for j in range(len(dag.node_set)):
+            if j in dag.critical_path:
+                continue
             if i>dag.node_set[j].i and i<dag.node_set[j].f:
-                core+=1
-        if core>maxcore:maxcore=core
-    return maxcore
+                if (dag.node_set[j].exec_t/(dag.node_set[j].f-dag.node_set[j].i))>1:
+                    print(dag.node_set[j].f-dag.node_set[j].i)
+                    print(dag.node_set[j].exec_t)
+                core+=dag.node_set[j].exec_t/(dag.node_set[j].f-dag.node_set[j].i)
+        if math.ceil(core)>maxcore:maxcore=math.ceil(core)
+    return maxcore+1
 
 def syn_exp(**kwargs):
     dag_num = kwargs.get('dag_num', 100)
@@ -98,7 +109,8 @@ def syn_exp(**kwargs):
     total_jh_core= 0
 
     dag_idx = 0
-    failure=0
+    jw_count = 0
+    jh_count = 0
     while dag_idx < dag_num:
         ### Make DAG and backup DAG
         normal_dag = generate_random_dag(**dag_param)
@@ -107,29 +119,47 @@ def syn_exp(**kwargs):
         normal_cpc = construct_cpc(normal_dag)
 
         ### Budget analysis
-        # deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
-        deadline=750
-        print(deadline)
+        # d1=int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
+        # d2=int((depth[0]+4)*exec_t[0])
+        # if d1>d2:
+        #     deadline=d1
+        # else:
+        #     # print("hoho")
+        #     deadline=d2
+        deadline=int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
         normal_dag.dict["deadline"] = deadline
 
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
         normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
+        true_deadline=deadline-normal_dag.node_set[0].exec_t-normal_dag.node_set[-1].exec_t
 
         # If budget is less than 0, DAG is infeasible
-        if check_deadline_miss(normal_dag, core_num, normal_classic_budget/sl_unit, sl_unit, deadline) or normal_classic_budget <= 0 :
-            failure+=1
-            continue
+        if (not check_deadline_miss(normal_dag, core_num, normal_classic_budget/sl_unit, sl_unit, deadline)) and normal_classic_budget > 0:
+            total_jw_budget+=normal_classic_budget/true_deadline
+            jw_count+=1
+            
 
-        total_jw_budget+=normal_classic_budget
+        new_budget=deadline-normal_dag.critical_path_point[-1]+normal_dag.node_set[normal_dag.sl_node_idx].ltc-normal_dag.node_set[normal_dag.sl_node_idx].est
+        normal_dag.node_set[normal_dag.sl_node_idx].exec_t=new_budget
+        
+        if new_budget > 0:
+            total_jh_budget+=new_budget/true_deadline
+            jh_count+=1
+            normal_dag=cal_est_ltc(normal_dag)
+            normal_dag=check_depen(normal_dag)
+            # show_stretch(normal_dag, '%f 3.png' %density)
+            total_jh_core+=check_maxcore(normal_dag, deadline)
 
-        normal_dag.node_set[normal_dag.sl_node_idx].exec_t=deadline-normal_dag.checkpoint[-1]+normal_dag.node_set[normal_dag.sl_node_idx].ltc-normal_dag.node_set[normal_dag.sl_node_idx].est
-        total_jh_budget+=normal_dag.node_set[normal_dag.sl_node_idx].exec_t
-        show_def(normal_dag, '%f 1.png'%density)
-        show_stretch(normal_dag, '%f 2.png'%density)
-        normal_dag=check_depen(normal_dag)
-        show_stretch(normal_dag, '%f 3.png' %density)
-        total_jh_core+=check_maxcore(normal_dag, deadline)
         dag_idx += 1
-
-
-    return total_jw_budget/dag_num, total_jh_budget/dag_num, total_jh_core/dag_num
+    print(density, jw_count, jh_count)
+    if jw_count>0:
+        jw_budget=total_jw_budget/jw_count
+    else:
+        jw_budget=0
+    if jh_count>0:
+        jh_budget=total_jh_budget/jh_count
+        jh_core=total_jh_core/jh_count
+    else:
+        jh_budget=0
+        jh_core=0
+    return jw_budget, jh_budget, jh_core

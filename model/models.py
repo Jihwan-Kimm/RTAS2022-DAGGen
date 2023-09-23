@@ -50,6 +50,7 @@ class DAG(object):
         Node.idx = 0
         self.node_set = []
         self.node_est = []
+        self.critical_path_point=[]
         self.checkpoint=[]
         self.start_node_idx = kwargs.get('start_node_idx', 0)
         self.critical_path = []

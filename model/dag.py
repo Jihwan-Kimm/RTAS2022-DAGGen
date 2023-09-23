@@ -1,3 +1,4 @@
+import copy
 from random import randint, shuffle
 import math
 import csv
@@ -46,10 +47,10 @@ def calc_est(dag, task_idx):
 def calc_ltc(dag, task_idx):
     if dag.node_set[task_idx].ltc == -1 :
         if len(dag.node_set[task_idx].succ)==0 :
-            dag.node_set[task_idx].ltc=dag.checkpoint[-1]
-            dag.node_set[task_idx].f=dag.checkpoint[-1]
+            dag.node_set[task_idx].ltc=dag.critical_path_point[-1]
+            dag.node_set[task_idx].f=dag.critical_path_point[-1]
         else :
-            ltc=dag.checkpoint[-1]
+            ltc=dag.critical_path_point[-1]
             for i in dag.node_set[task_idx].succ:
                 if dag.node_set[i].ltc == -1:
                     dag=calc_ltc(dag, dag.node_set[i].tid)
@@ -190,6 +191,7 @@ def generate_random_dag(**kwargs):
     # Assign self-looping node
     sl_node_idx = dag.critical_path[start_level]
     dag.sl_node_idx = sl_node_idx
+    dag.node_set[sl_node_idx].name='node_sl'
 
     dangling_dag = [sl_node_idx]
     dangling_level_dag = [[sl_node_idx]]
@@ -235,7 +237,8 @@ def generate_random_dag(**kwargs):
     for level in range(0, depth-1):
         for node_idx in level_arr[level]:
             if len(dag.node_set[node_idx].succ) == 0 :
-                succ_idx = level_arr[randint(level+1, depth-1)][randint(0, len(level_arr[level+1])-1)]
+                randnum=randint(level+1, depth-1)
+                succ_idx = level_arr[randnum][randint(0, len(level_arr[randnum])-1)]
                 dag.node_set[node_idx].succ.append(succ_idx)
                 dag.node_set[succ_idx].pred.append(node_idx)
 
@@ -257,24 +260,36 @@ def generate_random_dag(**kwargs):
 
     ### 5. Saving DAG info
     # dag.dict["isBackup"] = False
-    dag.dict["node_num"] = node_num
-    dag.dict["start_node_idx"] = dag.start_node_idx
-    dag.dict["sl_node_idx"] = dag.sl_node_idx
-    dag.dict["dangling_idx"] = dag.dangling_idx
-    dag.dict["critical_path"] = dag.critical_path
-    dag.dict["exec_t"] = [node.exec_t for node in dag.node_set]
-    adj_matrix = []
+    # dag.dict["node_num"] = node_num
+    # dag.dict["start_node_idx"] = dag.start_node_idx
+    # dag.dict["sl_node_idx"] = dag.sl_node_idx
+    # dag.dict["dangling_idx"] = dag.dangling_idx
+    # dag.dict["critical_path"] = dag.critical_path
+    # dag.dict["exec_t"] = [node.exec_t for node in dag.node_set]
+    # adj_matrix = []
     
-    for node in dag.node_set:
-        adj_row = [0 for _ in range(node_num)]
-        for succ_idx in node.succ:
-            adj_row[succ_idx] = 1
+    # for node in dag.node_set:
+    #     adj_row = [0 for _ in range(node_num)]
+    #     for succ_idx in node.succ:
+    #         adj_row[succ_idx] = 1
         
-        adj_matrix.append(adj_row)
+    #     adj_matrix.append(adj_row)
     
-    dag.dict["adj_matrix"] = adj_matrix
+    # dag.dict["adj_matrix"] = adj_matrix
+    
+    dag=cal_est_ltc(dag)
 
-    # Added by JH
+    return dag
+
+def cal_est_ltc(dag):
+    dag.node_est=[]
+    dag.critical_path=[]
+    dag.critical_path_point=[]
+    for i in dag.node_set:
+        i.est=-1
+        i.ltc=-1
+
+    node_num=len(dag.node_set)
     for i in range(node_num):
         dag=calc_est(dag, i)
     max_est=0
@@ -285,20 +300,20 @@ def generate_random_dag(**kwargs):
             max_est=dag.node_est[i]+dag.node_set[i].exec_t
             max_est_i=i
 
-    dag.critical_path=[]
-    dag.checkpoint.append(max_est)
+    dag.critical_path_point.append(max_est)
     max_est-=dag.node_set[max_est_i].exec_t
     while (max_est!=0) :
         dag.critical_path.append(max_est_i)
         for j in dag.node_set[max_est_i].pred:
             if dag.node_est[j]+dag.node_set[j].exec_t==max_est:
                 max_est_i=j
-                dag.checkpoint.append(max_est)
+                dag.critical_path_point.append(max_est)
                 max_est-=dag.node_set[j].exec_t
                 break
-    dag.checkpoint.append(0)
+    dag.critical_path_point.append(0)
     dag.critical_path.append(max_est_i)
-    dag.checkpoint.reverse()
+    dag.critical_path_point.reverse()
+    dag.checkpoint=copy.deepcopy(dag.critical_path_point)
     dag.critical_path.reverse()
 
     for i in range(node_num):
