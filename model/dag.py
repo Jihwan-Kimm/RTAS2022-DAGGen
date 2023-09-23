@@ -28,36 +28,36 @@ def argmax(value_list, index_list=None):
             max_value = value_list[i]
     return max_index
 
-def calc_est(dag, task_idx):
-    if dag.node_set[task_idx].est == -1 :
+def calc_lst(dag, task_idx):
+    if dag.node_set[task_idx].lst == -1 :
         if len(dag.node_set[task_idx].pred)==0 :
-            dag.node_set[task_idx].est=0
+            dag.node_set[task_idx].lst=0
             dag.node_set[task_idx].i=0
         else :
-            est=0
+            lst=0
             for i in dag.node_set[task_idx].pred:
-                if dag.node_set[i].est == -1:
-                    dag=calc_est(dag, dag.node_set[i].tid)
-                if dag.node_set[i].est+dag.node_set[i].exec_t>est:
-                    est=dag.node_set[i].est+dag.node_set[i].exec_t
-            dag.node_set[task_idx].est=est
-            dag.node_set[task_idx].i=est
+                if dag.node_set[i].lst == -1:
+                    dag=calc_lst(dag, dag.node_set[i].tid)
+                if dag.node_set[i].lst+dag.node_set[i].exec_t>lst:
+                    lst=dag.node_set[i].lst+dag.node_set[i].exec_t
+            dag.node_set[task_idx].lst=lst
+            dag.node_set[task_idx].i=lst
     return dag
 
-def calc_ltc(dag, task_idx):
-    if dag.node_set[task_idx].ltc == -1 :
+def calc_eft(dag, task_idx):
+    if dag.node_set[task_idx].eft == -1 :
         if len(dag.node_set[task_idx].succ)==0 :
-            dag.node_set[task_idx].ltc=dag.critical_path_point[-1]
+            dag.node_set[task_idx].eft=dag.critical_path_point[-1]
             dag.node_set[task_idx].f=dag.critical_path_point[-1]
         else :
-            ltc=dag.critical_path_point[-1]
+            eft=dag.critical_path_point[-1]
             for i in dag.node_set[task_idx].succ:
-                if dag.node_set[i].ltc == -1:
-                    dag=calc_ltc(dag, dag.node_set[i].tid)
-                if dag.node_set[i].ltc-dag.node_set[i].exec_t<ltc:
-                    ltc=dag.node_set[i].ltc-dag.node_set[i].exec_t
-            dag.node_set[task_idx].ltc=ltc
-            dag.node_set[task_idx].f=ltc
+                if dag.node_set[i].eft == -1:
+                    dag=calc_eft(dag, dag.node_set[i].tid)
+                if dag.node_set[i].eft-dag.node_set[i].exec_t<eft:
+                    eft=dag.node_set[i].eft-dag.node_set[i].exec_t
+            dag.node_set[task_idx].eft=eft
+            dag.node_set[task_idx].f=eft
     return dag
 
 def calculate_critical_path(dag):
@@ -277,47 +277,47 @@ def generate_random_dag(**kwargs):
     
     # dag.dict["adj_matrix"] = adj_matrix
     
-    dag=cal_est_ltc(dag)
+    dag=cal_lst_eft(dag)
 
     return dag
 
-def cal_est_ltc(dag):
-    dag.node_est=[]
+def cal_lst_eft(dag):
+    dag.node_lst=[]
     dag.critical_path=[]
     dag.critical_path_point=[]
     for i in dag.node_set:
-        i.est=-1
-        i.ltc=-1
+        i.lst=-1
+        i.eft=-1
 
     node_num=len(dag.node_set)
     for i in range(node_num):
-        dag=calc_est(dag, i)
-    max_est=0
-    max_est_i=0
+        dag=calc_lst(dag, i)
+    max_lst=0
+    max_lst_i=0
     for i in range(node_num):
-        dag.node_est.append(dag.node_set[i].est)
-        if dag.node_est[i]+dag.node_set[i].exec_t>max_est:
-            max_est=dag.node_est[i]+dag.node_set[i].exec_t
-            max_est_i=i
+        dag.node_lst.append(dag.node_set[i].lst)
+        if dag.node_lst[i]+dag.node_set[i].exec_t>max_lst:
+            max_lst=dag.node_lst[i]+dag.node_set[i].exec_t
+            max_lst_i=i
 
-    dag.critical_path_point.append(max_est)
-    max_est-=dag.node_set[max_est_i].exec_t
-    while (max_est!=0) :
-        dag.critical_path.append(max_est_i)
-        for j in dag.node_set[max_est_i].pred:
-            if dag.node_est[j]+dag.node_set[j].exec_t==max_est:
-                max_est_i=j
-                dag.critical_path_point.append(max_est)
-                max_est-=dag.node_set[j].exec_t
+    dag.critical_path_point.append(max_lst)
+    max_lst-=dag.node_set[max_lst_i].exec_t
+    while (max_lst!=0) :
+        dag.critical_path.append(max_lst_i)
+        for j in dag.node_set[max_lst_i].pred:
+            if dag.node_lst[j]+dag.node_set[j].exec_t==max_lst:
+                max_lst_i=j
+                dag.critical_path_point.append(max_lst)
+                max_lst-=dag.node_set[j].exec_t
                 break
     dag.critical_path_point.append(0)
-    dag.critical_path.append(max_est_i)
+    dag.critical_path.append(max_lst_i)
     dag.critical_path_point.reverse()
     dag.checkpoint=copy.deepcopy(dag.critical_path_point)
     dag.critical_path.reverse()
 
     for i in range(node_num):
-        dag=calc_ltc(dag, i)
+        dag=calc_eft(dag, i)
     
     return dag
 

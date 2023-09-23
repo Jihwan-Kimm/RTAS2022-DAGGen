@@ -27,8 +27,8 @@ class Node(object):
         self.f_t = -1
 
                 # Added by JH
-        self.est = -1
-        self.ltc = -1
+        self.lst = -1
+        self.eft = -1
         self.i = -1
         self.f = -1
         self.color=(random.random()/2.5+0.2, random.random()/2.5+0.2, random.random()/2.5+0.2)
@@ -49,7 +49,7 @@ class DAG(object):
     def __init__(self, **kwargs):
         Node.idx = 0
         self.node_set = []
-        self.node_est = []
+        self.node_lst = []
         self.critical_path_point=[]
         self.checkpoint=[]
         self.start_node_idx = kwargs.get('start_node_idx', 0)

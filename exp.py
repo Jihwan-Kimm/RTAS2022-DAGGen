@@ -1,5 +1,5 @@
 import math
-from model.dag import export_dag_file, generate_random_dag, generate_backup_dag, generate_from_dict, import_dag_file, cal_est_ltc
+from model.dag import export_dag_file, generate_random_dag, generate_backup_dag, generate_from_dict, import_dag_file, cal_lst_eft
 from model.cpc import construct_cpc, assign_priority
 from sched.fp import calculate_acc, check_acceptance, check_deadline_miss, sched_fp
 from sched.classic_budget import classic_budget
@@ -17,9 +17,9 @@ def show_def(dag, title):
         ax.text((dag.critical_path_point[i]+dag.critical_path_point[i+1]) / 2, 7, dag.node_set[dag.critical_path[i]].name, ha='center', va='center', color='black')
     for i in range(len(dag.node_set)):
         if i in dag.critical_path: continue
-        ax.add_patch(Rectangle((dag.node_set[i].est, 20+(i-len(dag.critical_path))*15), dag.node_set[i].ltc-dag.node_set[i].est, 15, fill=False, color='black'))
-        ax.add_patch(Rectangle((dag.node_set[i].est, 20+(i-len(dag.critical_path))*15), dag.node_set[i].exec_t, 15, color=dag.node_set[i].color))
-        ax.text(dag.node_set[i].est+20, 27+(i-len(dag.critical_path))*15, dag.node_set[i].name, ha='center', va='center', color='black')
+        ax.add_patch(Rectangle((dag.node_set[i].lst, 20+(i-len(dag.critical_path))*15), dag.node_set[i].eft-dag.node_set[i].lst, 15, fill=False, color='black'))
+        ax.add_patch(Rectangle((dag.node_set[i].lst, 20+(i-len(dag.critical_path))*15), dag.node_set[i].exec_t, 15, color=dag.node_set[i].color))
+        ax.text(dag.node_set[i].lst+20, 27+(i-len(dag.critical_path))*15, dag.node_set[i].name, ha='center', va='center', color='black')
     plt.axis('equal') 
     plt.savefig('res/'+title, dpi=300)
     plt.close()
@@ -35,9 +35,9 @@ def show_stretch(dag, title):
             space+=1 
             continue
         j=i-space
-        ax.add_patch(Rectangle((dag.node_set[i].est,50+45*j), dag.node_set[i].ltc-dag.node_set[i].est, 45, fill=False, color='black'))
+        ax.add_patch(Rectangle((dag.node_set[i].lst,50+45*j), dag.node_set[i].eft-dag.node_set[i].lst, 45, fill=False, color='black'))
         ax.add_patch(Rectangle((dag.node_set[i].i, 50+45*j), dag.node_set[i].f-dag.node_set[i].i, 45*dag.node_set[i].exec_t/(dag.node_set[i].f-dag.node_set[i].i), color=dag.node_set[i].color))
-        ax.text(dag.node_set[i].est+45, 73+45*j, dag.node_set[i].name, ha='center', va='center', color='black')
+        ax.text(dag.node_set[i].lst+45, 73+45*j, dag.node_set[i].name, ha='center', va='center', color='black')
     plt.axis('equal') 
     plt.savefig('res/'+title, dpi=300)
     plt.close()
@@ -48,8 +48,8 @@ def check_depen(dag):
         for j in dag.node_set[i].pred:
             if dag.node_set[i].i<dag.node_set[j].f:
                 border=(dag.node_set[i].exec_t*dag.node_set[j].i+dag.node_set[j].exec_t*dag.node_set[i].f)/(dag.node_set[i].exec_t+dag.node_set[j].exec_t)
-                if border<dag.node_set[i].est: border=dag.node_set[i].est
-                if border>dag.node_set[j].ltc: border=dag.node_set[j].ltc
+                if border<dag.node_set[i].lst: border=dag.node_set[i].lst
+                if border>dag.node_set[j].eft: border=dag.node_set[j].eft
                 dag.node_set[i].i=border
                 dag.node_set[j].f=border
                 dag.checkpoint.append(border)
@@ -57,8 +57,8 @@ def check_depen(dag):
         for j in dag.node_set[i].succ:
             if dag.node_set[i].f>dag.node_set[j].i:
                 border=(dag.node_set[j].exec_t*dag.node_set[i].i+dag.node_set[i].exec_t*dag.node_set[j].f)/(dag.node_set[i].exec_t+dag.node_set[j].exec_t)
-                if border>dag.node_set[i].ltc: border=dag.node_set[i].ltc
-                if border<dag.node_set[j].est: border=dag.node_set[j].est                
+                if border>dag.node_set[i].eft: border=dag.node_set[i].eft
+                if border<dag.node_set[j].lst: border=dag.node_set[j].lst                
                 dag.node_set[i].f=border
                 dag.node_set[j].i=border
                 dag.checkpoint.append(border)
@@ -139,13 +139,13 @@ def syn_exp(**kwargs):
             jw_count+=1
             
 
-        new_budget=deadline-normal_dag.critical_path_point[-1]+normal_dag.node_set[normal_dag.sl_node_idx].ltc-normal_dag.node_set[normal_dag.sl_node_idx].est
+        new_budget=deadline-normal_dag.critical_path_point[-1]+normal_dag.node_set[normal_dag.sl_node_idx].eft-normal_dag.node_set[normal_dag.sl_node_idx].lst
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t=new_budget
         
         if new_budget > 0:
             total_jh_budget+=new_budget/true_deadline
             jh_count+=1
-            normal_dag=cal_est_ltc(normal_dag)
+            normal_dag=cal_lst_eft(normal_dag)
             normal_dag=check_depen(normal_dag)
             # show_stretch(normal_dag, '%f 3.png' %density)
             total_jh_core+=check_maxcore(normal_dag, deadline)
