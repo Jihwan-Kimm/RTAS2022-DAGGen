@@ -126,7 +126,7 @@ def syn_exp(**kwargs):
         # else:
         #     # print("hoho")
         #     deadline=d2
-        deadline=int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
+        deadline=int((exec_t[0] * (len(normal_dag.node_set)-2)) / (core_num * density))+exec_t[0]*2
         normal_dag.dict["deadline"] = deadline
 
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
