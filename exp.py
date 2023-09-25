@@ -126,7 +126,11 @@ def syn_exp(**kwargs):
         # else:
         #     # print("hoho")
         #     deadline=d2
-        deadline=int((exec_t[0] * (len(normal_dag.node_set)-2)) / (core_num * density))+exec_t[0]*2
+        workload=0
+        for i in range(1, len(normal_dag.node_set)-1):
+            workload+=normal_dag.node_set[i].exec_t
+
+        deadline=int((workload) / (core_num * density))+normal_dag.node_set[0].exec_t+normal_dag.node_set[-1].exec_t
         normal_dag.dict["deadline"] = deadline
 
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
@@ -147,7 +151,7 @@ def syn_exp(**kwargs):
             jh_count+=1
             normal_dag=cal_lst_eft(normal_dag)
             normal_dag=check_depen(normal_dag)
-            # show_stretch(normal_dag, '%f 3.png' %density)
+            
             total_jh_core+=check_maxcore(normal_dag, deadline)
 
         dag_idx += 1
@@ -162,4 +166,5 @@ def syn_exp(**kwargs):
     else:
         jh_budget=0
         jh_core=0
+    # show_stretch(normal_dag, '%f %f.png' % (depth[0], density))
     return jw_budget, jh_budget, jh_core
