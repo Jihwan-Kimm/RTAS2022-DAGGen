@@ -66,7 +66,10 @@ def check_depen(dag):
 
 def check_maxcore(dag, deadline):
     maxcore=-1
-    for i in dag.checkpoint:
+    p=[]
+    for i in range(len(dag.checkpoint)-1):
+        p.append((dag.checkpoint[i+1]+dag.checkpoint[i])/2)
+    for i in p:
         core=0
         for j in range(len(dag.node_set)):
             if j in dag.critical_path:
