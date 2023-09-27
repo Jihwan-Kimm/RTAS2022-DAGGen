@@ -113,7 +113,8 @@ def syn_exp(**kwargs):
 
     dag_idx = 0
     jw_count = 0
-    jh_count = 0
+    jh_count=0
+    jh_success=0
     while dag_idx < dag_num:
         ### Make DAG and backup DAG
         normal_dag = generate_random_dag(**dag_param)
@@ -139,6 +140,8 @@ def syn_exp(**kwargs):
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
         normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
         true_deadline=deadline-normal_dag.node_set[0].exec_t-normal_dag.node_set[-1].exec_t
+        # if check_deadline_miss(normal_dag, core_num, 0, sl_unit, deadline):
+        #     cpc_success+=1
 
         # If budget is less than 0, DAG is infeasible
         if (not check_deadline_miss(normal_dag, core_num, normal_classic_budget/sl_unit, sl_unit, deadline)) and normal_classic_budget > 0:
@@ -151,14 +154,15 @@ def syn_exp(**kwargs):
         
         if new_budget > 0:
             total_jh_budget+=new_budget/true_deadline
-            jh_count+=1
             normal_dag=cal_lst_eft(normal_dag)
             normal_dag=check_depen(normal_dag)
-            
-            total_jh_core+=check_maxcore(normal_dag, deadline)
+            jh_count+=1
+            need_core=check_maxcore(normal_dag, deadline)
+            total_jh_core+=need_core
+            if need_core<=core_num:
+                jh_success+=1
 
         dag_idx += 1
-    print(density, jw_count, jh_count)
     if jw_count>0:
         jw_budget=total_jw_budget/jw_count
     else:
@@ -170,4 +174,4 @@ def syn_exp(**kwargs):
         jh_budget=0
         jh_core=0
     # show_stretch(normal_dag, '%f %f.png' % (depth[0], density))
-    return jw_budget, jh_budget, jh_core
+    return jw_budget, jh_budget, jh_core, jw_count/dag_num, jh_success/dag_num

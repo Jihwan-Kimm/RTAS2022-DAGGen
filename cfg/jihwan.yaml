@@ -1,7 +1,7 @@
 exp: jihwan
 density_range: [5,96,5]
 
-dag_num: 1000
+dag_num: 10000
 instance_num: 100
 
 core_num: 4      #  (3, 4, 5)

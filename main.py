@@ -36,30 +36,42 @@ if __name__ == '__main__':
         wr = csv.writer(f)
         wr.writerow(['density','jw_budget', 'jh_budget', 'jw_core', 'jh_core'])
 
-        for i in range(6, 9):
-            exp_param["depth"]=[i, 1]
-            wr.writerow(["core num : "+str(exp_param["core_num"]) , "node num : "+str(exp_param["node_num"]), "depth : "+str(exp_param["depth"])])
-            print(exp_param["core_num"], exp_param["node_num"], exp_param["depth"])
-            for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
-                d_f = round(d / 100, 2)
-                print('Density %f start' % d_f)
-                exp_param["density"] = d_f
-                exp_param["sl_std"] = config_dict["sl_std"]
-                jw, jh, core = syn_exp(**exp_param)
-                wr.writerow([d_f, jw, jh, exp_param["core_num"], core])
+        # for i in range(6, 9):
+        #     exp_param["depth"]=[i, 1]
+        #     wr.writerow(["core num : "+str(exp_param["core_num"]) , "node num : "+str(exp_param["node_num"]), "depth : "+str(exp_param["depth"])])
+        #     print(exp_param["core_num"], exp_param["node_num"], exp_param["depth"])
+        #     for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
+        #         d_f = round(d / 100, 2)
+        #         print('Density %f start' % d_f)
+        #         exp_param["density"] = d_f
+        #         exp_param["sl_std"] = config_dict["sl_std"]
+        #         jw, jh, core, jws, jhs = syn_exp(**exp_param)
+        #         wr.writerow([d_f, jw, jh, exp_param["core_num"], core])
 
-        for i in range(1, 4):
-            exp_param["depth"]=[7, 1]
-            exp_param["dangling_ratio"]=i/10
-            wr.writerow(["core num : "+str(exp_param["core_num"]) , "node num : "+str(exp_param["node_num"]), "depth : "+str(exp_param["depth"])])
-            print(exp_param["core_num"], exp_param["node_num"], exp_param["depth"])
-            for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
-                d_f = round(d / 100, 2)
-                print('Density %f start' % d_f)
-                exp_param["density"] = d_f
-                exp_param["sl_std"] = config_dict["sl_std"]
-                jw, jh, core = syn_exp(**exp_param)
-                wr.writerow([d_f, jw, jh, exp_param["core_num"], core])
+        # for i in range(1, 4):
+        #     exp_param["depth"]=[7, 1]
+        #     exp_param["dangling_ratio"]=i/10
+        #     wr.writerow(["core num : "+str(exp_param["core_num"]) , "node num : "+str(exp_param["node_num"]), "depth : "+str(exp_param["depth"])])
+        #     print(exp_param["core_num"], exp_param["node_num"], exp_param["depth"])
+        #     for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
+        #         d_f = round(d / 100, 2)
+        #         print('Density %f start' % d_f)
+        #         exp_param["density"] = d_f
+        #         exp_param["sl_std"] = config_dict["sl_std"]
+        #         jw, jh, core, jws, jhs = syn_exp(**exp_param)
+        #         wr.writerow([d_f, jw, jh, exp_param["core_num"], core])
+        
+        exp_param["depth"]=[7, 1]
+        exp_param["dangling_ratio"]=0.2
+        wr.writerow(["core num : "+str(exp_param["core_num"]) , "node num : "+str(exp_param["node_num"]), "depth : "+str(exp_param["depth"])])
+        print(exp_param["core_num"], exp_param["node_num"], exp_param["depth"])
+        for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
+            d_f = round(d / 100, 2)
+            print('Density %f start' % d_f)
+            exp_param["density"] = d_f
+            exp_param["sl_std"] = config_dict["sl_std"]
+            jw, jh, core, jws, jhs = syn_exp(**exp_param)
+            wr.writerow([d_f, jw, jh, exp_param["core_num"], core, jws, jhs])
 
     end_ts = datetime.now()
     print('[System] Execution time : %s' % str(end_ts - start_ts))
